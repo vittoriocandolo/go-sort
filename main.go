@@ -4,66 +4,60 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+	"sort"
+)
+
+const (
+	sliceLength = 10
+	maxValue = 100
 )
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-	slice := make([]int, 10)
-	for i := 0; i < len(slice); i++ {
-		slice[i] = rand.Intn(100)
+	slice := generateRandomSlice()
+	fmt.Println("Input:\t\t\t\t", slice)
+
+	sortedSlice := make([]int, sliceLength)
+	copySlice(sortedSlice, slice)
+
+	sortAlgorithms := []struct {
+		name string
+		fn   func([]int)
+	}{
+		{"bubble sort", bubbleSort},
+		{"selection sort", selectionSort},
+		{"insertion sort", insertionSort},
+		{"merge sort", func(s []int) { sortedSlice = mergeSort(s) }},
+		{"heap sort", heapSort},
+		{"quick sort", quickSort},
+		{"counting sort", func(s []int) { sortedSlice = countingSort(s, maxValue) }},
+		{"tree sort", func(s []int) { sortedSlice = treeSort(s) }},
+		{"cycle sort", cycleSort},
+		{"bitonic sort", func(s []int) {sortedSlice = bitonicSort(s) }},
+		// {"bitonic sort dual", func(s []int) {sortedSlice = bitonicSortDual(s) }},
+		{"golang sort", func(s []int) { sort.Slice(s, func(i, j int) bool {
+		    return s[i] < s[j]
+		})}},
 	}
-	fmt.Println("Input:", slice)
+	for _, algorithm := range sortAlgorithms {
+	    copySlice(sortedSlice, slice)
+	    startTime := time.Now()
+		algorithm.fn(sortedSlice)
+		elapsedTime := time.Since(startTime)
+		fmt.Printf("Sorted with %-*s %v (elapsed time: %e)\n", 20, algorithm.name+":", sortedSlice, elapsedTime.Seconds())
+	}
+}
 
-	// Sort slice with bubble sort
-	bubbleSorted := make([]int, len(slice))
-	copy(bubbleSorted, slice)
-	bubbleSort(bubbleSorted)
-	fmt.Println("Sorted with bubble sort:\t", bubbleSorted)
+func generateRandomSlice() []int {
+	rand.Seed(time.Now().UnixNano())
+	slice := make([]int, sliceLength)
+	for i := range slice {
+		slice[i] = rand.Intn(maxValue)
+	}
+	return slice
+}
 
-	// Sort slice with selection sort
-	selectionSorted := make([]int, len(slice))
-	copy(selectionSorted, slice)
-	selectionSort(selectionSorted)
-	fmt.Println("Sorted with selection sort:\t", selectionSorted)
-
-	// Sort slice with insertion sort
-	insertionSorted := make([]int, len(slice))
-	copy(insertionSorted, slice)
-	insertionSort(insertionSorted)
-	fmt.Println("Sorted with insertion sort:\t", insertionSorted)
-
-	// Sort slice with merge sort
-	mergeSorted := make([]int, len(slice))
-	mergeSorted = mergeSort(slice)
-	fmt.Println("Sorted with merge sort:\t\t", mergeSorted)
-
-	// Sort slice with heap sort
-	heapSorted := make([]int, len(slice))
-	copy(heapSorted, slice)
-	heapSort(heapSorted)
-	fmt.Println("Sorted with heap sort:\t\t", heapSorted)
-
-	// Sort slice with quick sort
-	quickSorted := make([]int, len(slice))
-	copy(quickSorted, slice)
-	quickSort(quickSorted)
-	fmt.Println("Sorted with quick sort:\t\t", quickSorted)
-
-	// Sort slice with counting sort
-	countingSorted := countingSort(slice, 100)
-	fmt.Println("Sorted with counting sort:\t", countingSorted)
-
-	// Sort slice with tree sort
-	treeSorted := make([]int, len(slice))
-	treeSorted = treeSort(slice)
-	fmt.Println("Sorted with tree sort:\t\t", treeSorted)
-
-	// Sort slice with cycle sort
-	cycleSorted := make([]int, len(slice))
-	copy(cycleSorted, slice)
-	cycleSort(cycleSorted)
-	fmt.Println("Sorted with cycle sort:\t\t", cycleSorted)
-
-	// Sort slice with bitonic sort
-	
+func copySlice(dst, src []int) {
+	for i := range dst {
+		dst[i] = src[i]
+	}
 }

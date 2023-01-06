@@ -1,36 +1,9 @@
 package main
 
-/*
-import "fmt"
-
-func sort(slice []int, algorithm string) {
-	switch algorithm {
-	case "bubble":
-		bubbleSort(slice)
-	case "selection":
-		selectionSort(slice)
-	case "insertion":
-		insertionSort(slice)
-	case "merge":
-		mergeSort(slice)
-	case "heap":
-		heapSort(slice)
-	case "quick":
-		quickSort(slice)
-	case "counting":
-		countingSort(slice, 100)
-	case "tree":
-		treeSort(slice)
-	case "cycle":
-		cycleSort(slice)
-	case "bitonic":
-		bitonicSort(slice)
-	default:
-		return fmt.Errorf("unrecognized: %s", algorithm)
-	}
-	return
-}
-*/
+import (
+    "math"
+    "sync"
+)
 
 
 func bubbleSort(slice []int) {
@@ -74,10 +47,11 @@ func insertionSort(slice []int) {
 
 
 func mergeSort(slice []int) []int {
-	if len(slice) <= 1 {
+	n := len(slice)
+	if n <= 1 {
 		return slice
 	}
-	mid := len(slice) / 2
+	mid := n / 2
 	left := mergeSort(slice[:mid])
 	right := mergeSort(slice[mid:])
 	return merge(left, right)
@@ -119,13 +93,13 @@ func heapSort(slice []int) {
 
 func heapify(slice []int, n, i int) {
 	largest := i
-	l := 2 * i + 1
-	r := 2 * i + 2
-	if l < n && slice[l] > slice[largest] {
-		largest = l
+	left := 2 * i + 1
+	right := 2 * i + 2
+	if left < n && slice[left] > slice[largest] {
+		largest = left
 	}
-	if r < n && slice[r] > slice[largest] {
-		largest = r
+	if right < n && slice[right] > slice[largest] {
+		largest = right
 	}
 	if largest != i {
 		slice[i], slice[largest] = slice[largest], slice[i]
@@ -143,8 +117,8 @@ func quickSortRecursive(slice []int, left, right int) {
 		return
 	}
 	pivotIndex := partition(slice, left, right)
-	quickSortRecursive(slice, left, pivotIndex-1)
-	quickSortRecursive(slice, pivotIndex+1, right)
+	quickSortRecursive(slice, left, pivotIndex - 1)
+	quickSortRecursive(slice, pivotIndex + 1, right)
 }
 
 func partition(slice []int, left, right int) int {
@@ -163,11 +137,12 @@ func partition(slice []int, left, right int) int {
 
 
 func countingSort(slice []int, maxValue int) []int {
-	count := make([]int, maxValue+1)
-	for i := 0; i < len(slice); i++ {
+	n := len(slice)
+	count := make([]int, maxValue + 1)
+	for i := 0; i < n; i++ {
 		count[slice[i]]++
 	}
-	sorted := make([]int, len(slice))
+	sorted := make([]int, n)
 	sortedIndex := 0
 	for i := 0; i < len(count); i++ {
 		for j := 0; j < count[i]; j++ {
@@ -254,5 +229,83 @@ func cycleSort(slice []int) {
 	}
 }
 
+func bitonicSort(slice []int) []int {
+    n := len(slice)
+    makePowerOfTwo(&slice)
+	bitonicSortRec(slice, 0, len(slice), 1)
+	return slice[:n]
+}
 
-// TODO bitonicSort
+func makePowerOfTwo(slice *[]int) {
+	n := len(*slice)
+    if (isPowerOfTwo(n)) {
+        return
+    } else {
+        for len(*slice) < nextPowerOfTwo(n) {
+            *slice = append(*slice, math.MaxInt32)
+        }
+    }
+}
+
+func isPowerOfTwo(n int) bool {
+	return n > 0 && (n&(n-1)) == 0
+}
+
+func nextPowerOfTwo(n int) int {
+	n--
+	n |= n >> 1
+	n |= n >> 2
+	n |= n >> 4
+	n |= n >> 8
+	n |= n >> 16
+	n |= n >> 32
+	n++
+	return n
+}
+
+func bitonicSortRec(slice []int, low, cnt, dir int) {
+	if cnt > 1 {
+		k := cnt / 2
+		bitonicSortRec(slice, low, k, 1)
+		bitonicSortRec(slice, low+k, k, 0)
+		bitonicMerge(slice, low, cnt, dir)
+	}
+}
+
+func bitonicMerge(slice []int, low, cnt, dir int) {
+	if cnt > 1 {
+		k := cnt / 2
+		for i := low; i < low+k; i++ {
+			compAndSwap(slice, i, i+k, dir)
+		}
+		bitonicMerge(slice, low, k, dir)
+		bitonicMerge(slice, low+k, k, dir)
+	}
+}
+
+func compAndSwap(slice []int, i, j, dir int) {
+	if ((dir==1 && slice[i] > slice[j]) || (dir==0 && slice[i] < slice[j])) {
+		slice[i], slice[j] = slice[j], slice[i]
+	}
+}
+
+// only if len(slice) is a power of two...
+func bitonicSortDual(slice []int) []int {
+    n := len(slice)
+    makePowerOfTwo(&slice)
+
+    var wg sync.WaitGroup
+    wg.Add(2)
+
+    go func() {
+        defer wg.Done()
+        bitonicSortRec(slice, 0, len(slice)/2, 1)
+    }()
+    go func() {
+        defer wg.Done()
+        bitonicSortRec(slice, len(slice)/2, len(slice)/2, 0)
+    }()
+
+    wg.Wait()
+    return slice[:n]
+}
