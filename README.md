@@ -1,2 +1,2 @@
 # go-sort
-Sorting algorithms written in Golang
+Simple bitonic sort implementation pending
